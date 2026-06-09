@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>basic Calculator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 5;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f3f4f6;
+        }
+        .calculator {
+            width: 320px;
+            background-color: #7899db;
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(98, 96, 96, 0.25);
+        }
+        .display {
+            background-color: #141415;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            text-align: right;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            word-wrap: break-word;
+            word-break: break-all;
+        }
+        .preview {
+            color: #6b7280;
+            font-size: 1rem;
+            min-height: 1.5rem;
+        }
+        .current {
+            color: #ffffff;
+            font-size: 2.2rem;
+            font-weight: 600;
+        }
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        button {
+            padding: 18px 0;
+            font-size: 1.3rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            background-color: #222a36;
+            color: #ffffff;
+            transition: all 0.1s ease;
+        }
+        button:active {
+            transform: scale(0.95);
+            opacity: 0.8;
+        }
+        button.operator {
+            background-color: #ff9f0a;
+            color: #ffffff;
+            font-weight: 600;
+        }
+        button.clear {
+            background-color: #ef4444;
+            color: #ffffff;
+        }
+        button.equal {
+            background-color: #10b981;
+            color: #ffffff;
+            grid-column: span 2;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="display">
+            <div id="preview" class="preview"></div>
+            <div id="current" class="current">0</div>
+        </div>
+        <div class="buttons">
+            <button class="clear" onclick="clearScreen()">C</button>
+            <button class="operator" onclick="appendOperator('%')">&percnt;</button>
+            <button onclick="deleteLast()">⌫</button>
+            <button class="operator" onclick="appendOperator('÷')">&divide;</button>
+            <button onclick="appendNumber('7')">7</button>
+            <button onclick="appendNumber('8')">8</button>
+            <button onclick="appendNumber('9')">9</button>
+            <button class="operator" onclick="appendOperator('×')">&times;</button>
+            <button onclick="appendNumber('4')">4</button>
+            <button onclick="appendNumber('5')">5</button>
+            <button onclick="appendNumber('6')">6</button>
+            <button class="operator" onclick="appendOperator('-')">-</button>
+            <button onclick="appendNumber('1')">1</button>
+            <button onclick="appendNumber('2')">2</button>
+            <button onclick="appendNumber('3')">3</button>
+            <button class="operator" onclick="appendOperator('+')">+</button>
+            <button onclick="appendNumber('0')">0</button>
+            <button onclick="appendNumber('.')">.</button>
+            <button class="equal" onclick="calculate()">=</button>
+        </div>
+    </div>
+    <script>
+        const currentDisplay = document.getElementById('current');
+        const previewDisplay = document.getElementById('preview');
+        let expressionString = '';
+        function appendNumber(number) {
+            if (number === '.' && getLastNumberBlock().includes('.')) return;  
+            if (expressionString === '0' && number !== '.') {
+                expressionString = number;
+            } else {
+                expressionString += number;
+            }
+            updateDisplay();
+            livePreview();
+        }
+        function appendOperator(operator) {
+            if (expressionString === '') return;
+            const lastChar = expressionString.slice(-1);
+            if (['+', '-', '×', '÷'].includes(lastChar)) {
+                expressionString = expressionString.slice(0, -1) + operator;
+            } else {
+                expressionString += operator;
+            }
+            updateDisplay();
+        }
+        function clearScreen() {
+            expressionString = '';
+            currentDisplay.innerText = '0';
+            previewDisplay.innerText = '';
+        }
+        function deleteLast() {
+            expressionString = expressionString.slice(0, -1);
+            updateDisplay();
+            livePreview();
+        }
+        function updateDisplay() {
+            currentDisplay.innerText = expressionString || '0';
+        }
+        function prepareExpression(str) {
+            return str.replace(/×/g, '*').replace(/÷/g, '/');
+        }
+        function getLastNumberBlock() {
+            const parts = expressionString.split(/[+\-×÷]/);
+            return parts[parts.length - 1];
+        }
+        function livePreview() {
+            const lastChar = expressionString.slice(-1);
+            if (expressionString && !['+', '-', '×', '÷'].includes(lastChar)) {
+                try {
+                    const jsExpression = prepareExpression(expressionString);
+                    const result = new Function('return ' + jsExpression)();
+                    previewDisplay.innerText = result;
+                } catch (e) {
+                    previewDisplay.innerText = '';
+                }
+            } else {
+                previewDisplay.innerText = '';
+            }
+        }
+        function calculate() {
+            if (!expressionString) return;
+            try {
+                const jsExpression = prepareExpression(expressionString);
+                const result = new Function('return ' + jsExpression)();
+                if (result === Infinity || result === -Infinity || isNaN(result)) {
+                    currentDisplay.innerText = "Error";
+                    expressionString = '';
+                    previewDisplay.innerText = '';
+                    return;
+                }
+                currentDisplay.innerText = result;
+                previewDisplay.innerText = expressionString + ' =';
+                expressionString = result.toString();
+            } catch (error) {
+                currentDisplay.innerText = "Error";
+                expressionString = '';
+                previewDisplay.innerText = '';
+            }
+        }
+    </script>
+</body>
+</html>
